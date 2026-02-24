@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model EnergyBill {
+  id                        String   @id @default(cuid())
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  
+  // Dados extraídos diretamente do PDF
+  customerNumber           String   // Número do cliente (ex: 7202210726)
+  referenceMonth           String   // Mês de referência (ex: SET/2024)
+  
+  // Itens da fatura (extraídos do LLM)
+  electricEnergyQuantity   Float    // Energia Elétrica - Quantidade (kWh)
+  electricEnergyValue      Float    // Energia Elétrica - Valor (R$)
+  
+  sceeeQuantity            Float?   // Energia SCEEE s/ICMS - Quantidade (kWh)
+  sceeeValue               Float?   // Energia SCEEE s/ICMS - Valor (R$)
+  
+  compensatedEnergyQuantity Float?  // Energia compensada GD I - Quantidade (kWh)
+  compensatedEnergyValue    Float?  // Energia compensada GD I - Valor (R$)
+  
+  publicLightingContrib     Float?  // Contrib Ilum Publica Municipal - Valor (R$)
+  
+  // Variáveis calculadas (conforme especificação)
+  totalEnergyConsumption    Float   // Consumo de Energia Elétrica (kWh) = electricEnergyQuantity + sceeeQuantity
+  compensatedEnergy         Float?  // Energia Compensada (kWh) = compensatedEnergyQuantity
+  totalValueWithoutGD       Float   // Valor Total sem GD (R$) = electricEnergyValue + sceeeValue + publicLightingContrib
+  gdEconomy                 Float?  // Economia GD (R$) = compensatedEnergyValue
+
+   processingLogs        ProcessingLog[]
+  
+  // Metadados do arquivo
+  originalFileName          String   
+  filePath                  String?
+  fileSize                  Int?
+  fileHash                  String?  // Para evitar duplicatas
+  
+  // Status do processamento
+  processingStatus          ProcessingStatus @default(PENDING)
+  errorMessage              String?
+  
+  @@map("energy_bills")
+  @@index([customerNumber])
+  @@index([referenceMonth])
+  @@index([customerNumber, referenceMonth])
+  @@index([createdAt])
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  
+  @@map("processing_status")
+}
+
+// Tabela de logs para auditoria
+model ProcessingLog {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  
+  billId            String?
+  bill              EnergyBill? @relation(fields: [billId], references: [id], onDelete: SetNull)
+  
+  operation         String   // Tipo de operação (upload, llm_processing, calculation, etc.)
+  status            String   // Status da operação (success, error, warning)
+  message           String?  // Mensagem detalhada
+  metadata          Json?    // Dados adicionais em JSON
+  duration          Float?   // Duração da operação em millisegundos
+  
+  @@map("processing_logs")
+  @@index([billId])
+  @@index([createdAt])
+  @@index([operation])
+}
