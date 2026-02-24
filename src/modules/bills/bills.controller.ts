@@ -8,7 +8,8 @@ import {
   UploadedFile,
   BadRequestException,
   Delete,
-  HttpCode
+  HttpCode,
+  Patch
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -31,7 +32,17 @@ import {
 @ApiTags('bills')
 @Controller('bills')
 export class BillsController {
+
   constructor(private readonly billsService: BillsService) {}
+
+  @Patch(':id/reprocess')
+  @ApiOperation({ summary: 'Reprocessar fatura FAILED', description: 'Tenta novamente processar uma fatura com status FAILED usando o arquivo já salvo.' })
+  @ApiParam({ name: 'id', description: 'ID único da fatura' })
+  @ApiResponse({ status: 200, description: 'Fatura reprocessada com sucesso' })
+  @ApiResponse({ status: 400, description: 'Fatura não está em status FAILED ou não encontrada' })
+  async reprocessBill(@Param('id') id: string): Promise<ProcessBillResponseDto> {
+    return this.billsService.reprocessBill(id);
+  }
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))

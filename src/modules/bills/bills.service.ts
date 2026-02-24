@@ -13,6 +13,40 @@ import { createHash } from 'node:crypto';
 
 @Injectable()
 export class BillsService {
+    async reprocessBill(id: string): Promise<ProcessBillResponseDto> {
+      this.logger.log(`[REPROCESS] Tentando reprocessar fatura ${id}`);
+      const bill = await this.prisma.energyBill.findUnique({ where: { id } });
+      if (!bill) {
+        throw new NotFoundException('Fatura não encontrada');
+      }
+      if (bill.processingStatus !== ProcessingStatus.FAILED) {
+        throw new BadRequestException('Só é possível reprocessar faturas com status FAILED');
+      }
+      // Simular arquivo para reprocessar
+      const fakeFile: Express.Multer.File = {
+        originalname: bill.originalFileName,
+        buffer: await this.getFileBuffer(bill.filePath),
+        path: bill.filePath,
+        size: bill.fileSize,
+        mimetype: 'application/pdf',
+        fieldname: 'file',
+        encoding: '7bit',
+        stream: null,
+        destination: '',
+        filename: '',
+      };
+      return this.uploadAndProcessBill(fakeFile);
+    }
+
+    private async getFileBuffer(filePath: string): Promise<Buffer> {
+      const fs = await import('node:fs/promises');
+      try {
+        return await fs.readFile(filePath);
+      } catch (err) {
+        this.logger.error(`[REPROCESS] Erro ao ler arquivo salvo: ${err.message}`);
+        throw new BadRequestException('Não foi possível ler o arquivo salvo para reprocessamento.');
+      }
+    }
   private readonly logger = new Logger(BillsService.name);
 
   constructor(
@@ -27,10 +61,15 @@ export class BillsService {
     
     this.logger.log('Chamou BillsService.getBills');
     try {
-      this.logger.log(`Iniciando upload e processamento do arquivo: ${file.originalname}`);
+      this.logger.log(`[UPLOAD] Iniciando upload e processamento do arquivo: ${file.originalname}`);
 
       // Validar arquivo
-      this.validateFile(file);
+      try {
+        this.validateFile(file);
+      } catch (validationError) {
+        this.logger.error(`[UPLOAD] Falha na validação do arquivo: ${validationError.message}`);
+        throw validationError;
+      }
 
       // Criar hash do arquivo para evitar duplicatas
       const fileHash = this.generateFileHash(file.buffer);
@@ -41,25 +80,32 @@ export class BillsService {
       });
 
       if (existingBill) {
+        this.logger.warn(`[UPLOAD] Fatura duplicada detectada para hash: ${fileHash}`);
         throw new BadRequestException('Esta fatura já foi processada anteriormente');
       }
 
       // Criar registro inicial no banco
-      const initialBill = await this.prisma.energyBill.create({
-        data: {
-          customerNumber: 'PROCESSING',
-          referenceMonth: 'PROCESSING',
-          electricEnergyQuantity: 0,
-          electricEnergyValue: 0,
-          totalEnergyConsumption: 0,
-          totalValueWithoutGD: 0,
-          originalFileName: file.originalname,
-          filePath: file.path,
-          fileSize: file.size,
-          fileHash,
-          processingStatus: ProcessingStatus.PROCESSING,
-        },
-      });
+      let initialBill;
+      try {
+        initialBill = await this.prisma.energyBill.create({
+          data: {
+            customerNumber: 'PROCESSING',
+            referenceMonth: 'PROCESSING',
+            electricEnergyQuantity: 0,
+            electricEnergyValue: 0,
+            totalEnergyConsumption: 0,
+            totalValueWithoutGD: 0,
+            originalFileName: file.originalname,
+            filePath: file.path,
+            fileSize: file.size,
+            fileHash,
+            processingStatus: ProcessingStatus.PROCESSING,
+          },
+        });
+      } catch (dbCreateError) {
+        this.logger.error(`[UPLOAD] Erro ao criar registro inicial no banco: ${dbCreateError.message}`);
+        throw dbCreateError;
+      }
 
       // Log do início do processamento
       await this.createProcessingLog(
@@ -117,7 +163,7 @@ export class BillsService {
           }
         );
 
-        this.logger.log(`Processamento concluído para fatura ${updatedBill.id} em ${processingTime}ms`);
+        this.logger.log(`[PROCESSAMENTO] Concluído para fatura ${updatedBill.id} em ${processingTime}ms`);
 
         return {
           success: true,
@@ -127,6 +173,7 @@ export class BillsService {
         };
 
       } catch (llmError) {
+        this.logger.error(`[PROCESSAMENTO] Erro durante extração/processamento LLM: ${llmError.message}`);
         // Atualizar status para falha
         await this.prisma.energyBill.update({
           where: { id: initialBill.id },
@@ -149,7 +196,7 @@ export class BillsService {
       }
 
     } catch (error) {
-      this.logger.error(`Erro no processamento da fatura: ${error.message}`, error.stack);
+      this.logger.error(`[FATAL] Erro no processamento da fatura: ${error.message}`, error.stack);
       throw error;
     }
   }
