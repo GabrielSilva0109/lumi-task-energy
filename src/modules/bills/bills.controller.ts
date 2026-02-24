@@ -11,7 +11,7 @@ import {
   HttpCode,
   Patch
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -32,6 +32,44 @@ import {
 @ApiTags('bills')
 @Controller('bills')
 export class BillsController {
+
+  @Post('upload/batch')
+  @UseInterceptors(FilesInterceptor('files'))
+  @ApiOperation({
+    summary: 'Upload e processamento em lote de faturas de energia',
+    description: 'Recebe múltiplos arquivos PDF de faturas de energia, processa cada um com LLM e salva os dados.'
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiResponse({
+    status: 200,
+    description: 'Faturas processadas',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: true },
+          message: { type: 'string', example: 'Fatura processada com sucesso' },
+          billId: { type: 'string', example: 'clkj1234567890' },
+          processingTime: { type: 'number', example: 1500 }
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Erro na validação de algum arquivo ou processamento',
+  })
+  async uploadBillsBatch(
+    @UploadedFile() _file: any, // para evitar erro do FileInterceptor
+    @UploadedFile('files') files: Express.Multer.File[]
+  ): Promise<ProcessBillResponseDto[]> {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('Nenhum arquivo foi enviado');
+    }
+    // Processa todos os arquivos em paralelo
+    return Promise.all(files.map(file => this.billsService.uploadAndProcessBill(file)));
+  }
 
   constructor(private readonly billsService: BillsService) {}
 
