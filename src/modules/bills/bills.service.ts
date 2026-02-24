@@ -9,8 +9,7 @@ import {
   ProcessingStatus
 } from './dto/bills.dto';
 import { LlmExtractionResponseDto } from '../llm/dto/llm-extraction.dto';
-import { createHash } from 'crypto';
-import { readFileSync } from 'fs';
+import { createHash } from 'node:crypto';
 
 @Injectable()
 export class BillsService {
@@ -263,6 +262,17 @@ export class BillsService {
     }
   }
 
+  async deleteBill(id: string): Promise<void> {
+    const bill = await this.prisma.energyBill.findUnique({ where: { id } });
+    if (!bill) {
+      throw new NotFoundException('Fatura não encontrada');
+    }
+    await this.prisma.energyBill.delete({ where: { id } });
+    // Opcional: deletar logs relacionados
+    await this.prisma.processingLog.deleteMany({ where: { billId: id } });
+    this.logger.log(`Fatura ${id} excluída com sucesso.`);
+  }
+
   private validateFile(file: Express.Multer.File): void {
     if (!file) {
       throw new BadRequestException('Nenhum arquivo foi enviado');
@@ -272,7 +282,7 @@ export class BillsService {
       throw new BadRequestException('Apenas arquivos PDF são aceitos');
     }
 
-    const maxSize = parseInt(process.env.MAX_FILE_SIZE) || 10485760; // 10MB
+    const maxSize = Number.parseInt(process.env.MAX_FILE_SIZE) || 10485760; // 10MB
     if (file.size > maxSize) {
       throw new BadRequestException(`Arquivo muito grande. Tamanho máximo: ${maxSize / 1024 / 1024}MB`);
     }

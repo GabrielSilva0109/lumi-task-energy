@@ -2,14 +2,15 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { LlmExtractionResponseDto, ExtractBillDataDto } from './dto/llm-extraction.dto';
-import { readFileSync } from 'fs';
+import { extname } from 'node:path';
+import * as pdfParse from 'pdf-parse';
 
 @Injectable()
 export class LlmService {
   private readonly logger = new Logger(LlmService.name);
   private readonly openai: OpenAI;
 
-  constructor(private configService: ConfigService) {
+  constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
     if (!apiKey) {
       throw new Error('OPENAI_API_KEY não configurada nas variáveis de ambiente');
@@ -24,16 +25,41 @@ export class LlmService {
     try {
       this.logger.log(`Iniciando extração de dados do arquivo: ${data.fileName}`);
 
-      // Convertendo o buffer para base64 para envio à OpenAI
-      const base64Image = data.fileBuffer.toString('base64');
+      let extractedText: string | undefined;
+      const fileExt = extname(data.fileName).toLowerCase();
+      if (fileExt === '.pdf') {
+        // Extrair texto do PDF
+        this.logger.log('Extraindo texto do PDF via pdf-parse...');
+        if (!data.fileBuffer || !(data.fileBuffer instanceof Buffer)) {
+          this.logger.error('fileBuffer inválido ou não é Buffer. Tipo:', typeof data.fileBuffer, 'Tamanho:', data.fileBuffer?.length);
+          throw new BadRequestException('Arquivo PDF não recebido corretamente para extração de texto.');
+        }
+        try {
+          const pdfData = await pdfParse(data.fileBuffer);
+          extractedText = pdfData.text;
+          if (extractedText) {
+            const preview = extractedText.length > 1000 ? extractedText.slice(0, 1000) + '... [truncated]' : extractedText;
+            this.logger.log('[PDF-TEXTO] Texto extraído (preview até 1000 chars):');
+            this.logger.log(preview);
+            this.logger.log(`[PDF-TEXTO] Tamanho total do texto extraído: ${extractedText.length} caracteres.`);
+          } else {
+            this.logger.warn('[PDF-TEXTO] Nenhum texto extraído do PDF.');
+          }
+        } catch (err) {
+          this.logger.error('Erro ao extrair texto do PDF:', err?.message);
+          throw new BadRequestException('Falha ao extrair texto do PDF: ' + (err?.message || 'Erro desconhecido'));
+        }
+      } else {
+        throw new BadRequestException('Apenas arquivos PDF são suportados para extração de dados.');
+      }
 
       const systemPrompt = this.buildSystemPrompt();
       const userPrompt = this.buildUserPrompt();
 
-      this.logger.log('Enviando requisição para OpenAI GPT-4 Vision...');
+      this.logger.log('Enviando texto extraído para OpenAI GPT-4o...');
 
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4-vision-preview',
+        model: 'gpt-4o',
         max_tokens: 2000,
         messages: [
           {
@@ -42,18 +68,7 @@ export class LlmService {
           },
           {
             role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: userPrompt,
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:application/pdf;base64,${base64Image}`,
-                },
-              },
-            ],
+            content: `${userPrompt}\n\n${extractedText}`,
           },
         ],
         response_format: { type: 'json_object' },
@@ -187,7 +202,7 @@ export class LlmService {
       },
       sceeeEnergy: {
         quantity: 476,
-        value: 392.50,
+        value: 392.5,
       },
       compensatedEnergy: {
         quantity: 526,

@@ -7,7 +7,8 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
-  ParseIntPipe,
+  Delete,
+  HttpCode
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -74,6 +75,7 @@ export class BillsController {
     return this.billsService.uploadAndProcessBill(file);
   }
 
+
   @Get()
   @ApiOperation({ 
     summary: 'Listar faturas processadas',
@@ -130,10 +132,10 @@ export class BillsController {
     // Fallback robusto para page e limit
     let page = 1;
     let limit = 20;
-    if (pageRaw && !isNaN(Number(pageRaw)) && Number(pageRaw) > 0) {
+    if (pageRaw && !Number.isNaN(Number(pageRaw)) && Number(pageRaw) > 0) {
       page = Number(pageRaw);
     }
-    if (limitRaw && !isNaN(Number(limitRaw)) && Number(limitRaw) > 0) {
+    if (limitRaw && !Number.isNaN(Number(limitRaw)) && Number(limitRaw) > 0) {
       limit = Number(limitRaw);
     }
 
@@ -200,5 +202,15 @@ export class BillsController {
   })
   async getBillById(@Param('id') id: string): Promise<UploadBillResponseDto> {
     return this.billsService.getBillById(id);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Excluir fatura', description: 'Remove uma fatura do banco de dados pelo ID' })
+  @ApiParam({ name: 'id', description: 'ID único da fatura' })
+  @ApiResponse({ status: 204, description: 'Fatura excluída com sucesso' })
+  @ApiResponse({ status: 404, description: 'Fatura não encontrada' })
+  async deleteBill(@Param('id') id: string): Promise<void> {
+    await this.billsService.deleteBill(id);
   }
 }
