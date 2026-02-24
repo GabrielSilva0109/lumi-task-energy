@@ -28,12 +28,15 @@ import {
   ProcessBillResponseDto,
   ProcessingStatus,
 } from './dto/bills.dto';
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('bills')
 @Controller('bills')
 export class BillsController {
 
   @Post('upload/batch')
+  @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FilesInterceptor('files'))
   @ApiOperation({
     summary: 'Upload e processamento em lote de faturas de energia',
@@ -74,6 +77,7 @@ export class BillsController {
   constructor(private readonly billsService: BillsService) {}
 
   @Patch(':id/reprocess')
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Reprocessar fatura FAILED', description: 'Tenta novamente processar uma fatura com status FAILED usando o arquivo já salvo.' })
   @ApiParam({ name: 'id', description: 'ID único da fatura' })
   @ApiResponse({ status: 200, description: 'Fatura reprocessada com sucesso' })
@@ -83,6 +87,7 @@ export class BillsController {
   }
 
   @Post('upload')
+  @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ 
     summary: 'Upload e processamento de fatura de energia',
@@ -126,6 +131,7 @@ export class BillsController {
 
 
   @Get()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ 
     summary: 'Listar faturas processadas',
     description: 'Retorna uma lista paginada de faturas com filtros opcionais'
@@ -213,6 +219,7 @@ export class BillsController {
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ 
     summary: 'Buscar fatura por ID',
     description: 'Retorna os dados detalhados de uma fatura específica'
@@ -255,6 +262,7 @@ export class BillsController {
 
   @Delete(':id')
   @HttpCode(204)
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Excluir fatura', description: 'Remove uma fatura do banco de dados pelo ID' })
   @ApiParam({ name: 'id', description: 'ID único da fatura' })
   @ApiResponse({ status: 204, description: 'Fatura excluída com sucesso' })
