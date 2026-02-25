@@ -6,10 +6,12 @@ import {
   Query,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
   BadRequestException,
   Delete,
   HttpCode,
-  Patch
+  Patch,
+  Logger
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -51,7 +53,9 @@ export class BillsController {
           success: { type: 'boolean', example: true },
           message: { type: 'string', example: 'Fatura processada com sucesso' },
           billId: { type: 'string', example: 'clkj1234567890' },
-          processingTime: { type: 'number', example: 1500 }
+          processingTime: { type: 'number', example: 1500 },
+          fileName: { type: 'string', example: 'fatura_setembro.pdf' },
+          error: { type: 'string', example: 'Erro específico do arquivo' }
         }
       }
     }
@@ -61,17 +65,20 @@ export class BillsController {
     description: 'Erro na validação de algum arquivo ou processamento',
   })
   async uploadBillsBatch(
-    @UploadedFile() _file: any, // para evitar erro do FileInterceptor
-    @UploadedFile('files') files: Express.Multer.File[]
+    @UploadedFiles() files: Express.Multer.File[]
   ): Promise<ProcessBillResponseDto[]> {
     if (!files || files.length === 0) {
       throw new BadRequestException('Nenhum arquivo foi enviado');
     }
-    // Processa todos os arquivos em paralelo
-    return Promise.all(files.map(file => this.billsService.uploadAndProcessBill(file)));
+
+    this.logger.log(`[BATCH] Iniciando processamento de ${files.length} arquivo(s)`);
+    
+    return this.billsService.uploadBillsBatch(files);
   }
 
   constructor(private readonly billsService: BillsService) {}
+  
+  private readonly logger = new Logger(BillsController.name);
 
   @Patch(':id/reprocess')
   @ApiOperation({ summary: 'Reprocessar fatura FAILED', description: 'Tenta novamente processar uma fatura com status FAILED usando o arquivo já salvo.' })

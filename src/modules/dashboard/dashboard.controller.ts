@@ -6,6 +6,8 @@ import {
   DashboardResponseDto,
   EnergyResultsDto,
   FinancialResultsDto,
+  AnnualFilterDto,
+  AnnualDashboardDto,
 } from './dto/dashboard.dto';
 
 @ApiTags('dashboard')
@@ -221,5 +223,103 @@ export class DashboardController {
     };
 
     return this.dashboardService.getFinancialResults(filters);
+  }
+
+  @Get('annual')
+  @ApiOperation({ 
+    summary: 'Dados de economia anual',
+    description: 'Retorna dados consolidados de economia por ano com comparações e rankings'
+  })
+  @ApiQuery({ name: 'year', required: false, type: Number, description: 'Ano para análise (padrão: ano atual)' })
+  @ApiQuery({ name: 'customerNumber', required: false, type: String, description: 'Filtrar por número do cliente específico' })
+  @ApiResponse({
+    status: 200,
+    description: 'Dados anuais retornados com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        yearData: {
+          type: 'object',
+          properties: {
+            year: { type: 'number', example: 2024 },
+            totalEconomy: { type: 'number', example: 5250.75, description: 'Economia total em R$' },
+            totalConsumption: { type: 'number', example: 12500, description: 'Consumo total em kWh' },
+            totalCompensation: { type: 'number', example: 11800, description: 'Compensação total em kWh' },
+            totalValueWithoutGD: { type: 'number', example: 8750.50, description: 'Valor total sem GD em R$' },
+            economyPercentage: { type: 'number', example: 60.01, description: 'Percentual de economia' },
+            billsCount: { type: 'number', example: 48, description: 'Faturas processadas' },
+            monthlyBreakdown: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  month: { type: 'string', example: 'JAN/2024' },
+                  consumption: { type: 'number', example: 520 },
+                  compensation: { type: 'number', example: 490 },
+                  economy: { type: 'number', example: 425.80 },
+                  valueWithoutGD: { type: 'number', example: 680.90 }
+                }
+              }
+            }
+          }
+        },
+        comparison: {
+          type: 'object',
+          nullable: true,
+          properties: {
+            currentYear: { type: 'object' },
+            previousYear: { type: 'object', nullable: true },
+            comparison: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                economyDifference: { type: 'number', example: 450.25, description: 'Diferença de economia em R$' },
+                economyGrowthPercentage: { type: 'number', example: 9.38, description: '% crescimento da economia' },
+                consumptionDifference: { type: 'number', example: 250, description: 'Diferença consumo em kWh' },
+                compensationDifference: { type: 'number', example: 180, description: 'Diferença compensação em kWh' }
+              }
+            }
+          }
+        },
+        topCustomers: {
+          type: 'array',
+          nullable: true,
+          description: 'Top 5 clientes por economia (apenas quando não filtrado)',
+          items: {
+            type: 'object',
+            properties: {
+              customerNumber: { type: 'string', example: '7204076116' },
+              totalEconomy: { type: 'number', example: 1250.80 },
+              totalConsumption: { type: 'number', example: 2800 },
+              billsCount: { type: 'number', example: 12 }
+            }
+          }
+        },
+        summary: {
+          type: 'object',
+          properties: {
+            availableYears: { 
+              type: 'array', 
+              items: { type: 'number' }, 
+              example: [2024, 2023, 2022] 
+            },
+            totalCustomers: { type: 'number', example: 150 },
+            totalBillsProcessed: { type: 'number', example: 1200 },
+            averageMonthlyEconomy: { type: 'number', example: 437.56 }
+          }
+        }
+      }
+    }
+  })
+  async getAnnualData(
+    @Query('year') year?: number,
+    @Query('customerNumber') customerNumber?: string,
+  ): Promise<AnnualDashboardDto> {
+    const filters: AnnualFilterDto = {
+      year,
+      customerNumber,
+    };
+
+    return this.dashboardService.getAnnualData(filters);
   }
 }

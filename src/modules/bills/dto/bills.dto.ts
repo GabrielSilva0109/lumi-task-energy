@@ -75,4 +75,6 @@ export class ProcessBillResponseDto {
   message: string;
   billId: string;
   processingTime?: number;
+  fileName?: string;
+  error?: string;
 }

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsNumber } from 'class-validator';
 
 export class DashboardFilterDto {
   @IsOptional()
@@ -12,6 +12,16 @@ export class DashboardFilterDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
+}
+
+export class AnnualFilterDto {
+  @IsOptional()
+  @IsNumber()
+  year?: number;
+
+  @IsOptional()
+  @IsString()
+  customerNumber?: string;
 }
 
 export class EnergyResultsDto {
@@ -61,5 +71,57 @@ export class DashboardResponseDto {
     startDate?: string;
     endDate?: string;
     customerNumber?: string;
+  };
+}
+
+// =========================
+// DTOs para Dados Anuais
+// =========================
+
+export class AnnualEconomyDto {
+  year: number;
+  totalEconomy: number; // Economia total em R$
+  totalConsumption: number; // Consumo total em kWh
+  totalCompensation: number; // Compensação total em kWh
+  totalValueWithoutGD: number; // Valor total sem GD em R$
+  economyPercentage: number; // Percentual de economia
+  billsCount: number; // Quantidade de faturas processadas
+  monthlyBreakdown: {
+    month: string; // Ex: "JAN/2024"
+    consumption: number;
+    compensation: number;
+    economy: number;
+    valueWithoutGD: number;
+  }[];
+}
+
+export class AnnualComparisonDto {
+  currentYear: AnnualEconomyDto;
+  previousYear?: AnnualEconomyDto;
+  comparison?: {
+    economyDifference: number; // Diferença em R$
+    economyGrowthPercentage: number; // % de crescimento/redução
+    consumptionDifference: number; // Diferença em kWh
+    compensationDifference: number; // Diferença em kWh
+  };
+}
+
+export class TopCustomersDto {
+  customerNumber: string;
+  totalEconomy: number;
+  totalConsumption: number;
+  billsCount: number;
+
+}
+
+export class AnnualDashboardDto {
+  yearData: AnnualEconomyDto;
+  comparison?: AnnualComparisonDto;
+  topCustomers?: TopCustomersDto[];
+  summary: {
+    availableYears: number[];
+    totalCustomers: number;
+    totalBillsProcessed: number;
+    averageMonthlyEconomy: number;
   };
 }

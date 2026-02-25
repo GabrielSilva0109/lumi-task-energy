@@ -170,6 +170,7 @@ export class BillsService {
           message: 'Fatura processada com sucesso',
           billId: updatedBill.id,
           processingTime,
+          fileName: file.originalname,
         };
 
       } catch (llmError) {
@@ -200,6 +201,68 @@ export class BillsService {
       throw error;
     }
   }
+
+  // =========================
+  // UPLOAD EM LOTE
+  // =========================
+
+  async uploadBillsBatch(
+    files: Express.Multer.File[]
+  ): Promise<ProcessBillResponseDto[]> {
+    this.logger.log(`[BATCH] Processando ${files.length} arquivo(s) em lote`);
+    
+    const results: ProcessBillResponseDto[] = [];
+    
+    // Processar arquivos sequencialmente para evitar sobrecarga do LLM
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const startTime = Date.now();
+      
+      try {
+        this.logger.log(`[BATCH] Processando arquivo ${i + 1}/${files.length}: ${file.originalname}`);
+        
+        const result = await this.uploadAndProcessBill(file);
+        
+        results.push({
+          success: true,
+          message: `Arquivo ${file.originalname} processado com sucesso`,
+          billId: result.billId,
+          processingTime: Date.now() - startTime,
+          fileName: file.originalname
+        });
+        
+        this.logger.log(`[BATCH] ✅ ${file.originalname} processado com sucesso (${Date.now() - startTime}ms)`);
+        
+      } catch (error) {
+        this.logger.error(`[BATCH] ❌ Erro ao processar ${file.originalname}: ${error.message}`);
+        
+        results.push({
+          success: false,
+          message: `Erro ao processar arquivo ${file.originalname}`,
+          billId: '',
+          processingTime: Date.now() - startTime,
+          fileName: file.originalname,
+          error: error.message
+        });
+      }
+      
+      // Pequeno delay entre arquivos para não sobrecarregar a API do LLM
+      if (i < files.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+    const successCount = results.filter(r => r.success).length;
+    const errorCount = results.filter(r => !r.success).length;
+    
+    this.logger.log(`[BATCH] Processamento concluído: ${successCount} sucessos, ${errorCount} erros`);
+    
+    return results;
+  }
+
+  // =========================
+  // CONSULTAS
+  // =========================
 
   async getBills(
     filters: BillFilterDto = {},
