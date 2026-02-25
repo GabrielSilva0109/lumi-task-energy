@@ -283,8 +283,7 @@ export class DashboardController {
         },
         topCustomers: {
           type: 'array',
-          nullable: true,
-          description: 'Top 5 clientes por economia (apenas quando não filtrado)',
+          description: 'Ranking de clientes por economia no ano',
           items: {
             type: 'object',
             properties: {

@@ -241,10 +241,8 @@ export class DashboardService {
       // Calcular comparação
       const comparison = this.calculateYearComparison(yearData, previousYearData);
 
-      // Buscar top customers (apenas se não filtrado por cliente específico)
-      const topCustomers = !filters.customerNumber 
-        ? await this.getTopCustomersByEconomy(year, 5)
-        : undefined;
+      // Buscar top customers (sempre, mesmo com poucos clientes)
+      const topCustomers = await this.getTopCustomersByEconomy(year, 5, filters.customerNumber);
 
       // Buscar dados de resumo
       const summary = await this.getAnnualSummary(year, filters.customerNumber);
@@ -358,15 +356,25 @@ export class DashboardService {
     };
   }
 
-  private async getTopCustomersByEconomy(year: number, limit: number = 5): Promise<TopCustomersDto[]> {
+  private async getTopCustomersByEconomy(year: number, limit: number = 5, customerFilter?: string): Promise<TopCustomersDto[]> {
+    const whereClause: any = {
+      processingStatus: ProcessingStatus.COMPLETED,
+      referenceMonth: {
+        contains: year.toString()
+      }
+    };
+
+    // Se tem filtro de cliente, aplicar
+    if (customerFilter) {
+      whereClause.customerNumber = {
+        contains: customerFilter,
+        mode: 'insensitive'
+      };
+    }
+
     const topCustomers = await this.prisma.energyBill.groupBy({
       by: ['customerNumber'],
-      where: {
-        processingStatus: ProcessingStatus.COMPLETED,
-        referenceMonth: {
-          contains: year.toString()
-        }
-      },
+      where: whereClause,
       _sum: {
         totalEnergyConsumption: true,
         gdEconomy: true,

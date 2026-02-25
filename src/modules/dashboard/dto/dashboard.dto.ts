@@ -117,7 +117,7 @@ export class TopCustomersDto {
 export class AnnualDashboardDto {
   yearData: AnnualEconomyDto;
   comparison?: AnnualComparisonDto;
-  topCustomers?: TopCustomersDto[];
+  topCustomers: TopCustomersDto[];
   summary: {
     availableYears: number[];
     totalCustomers: number;
