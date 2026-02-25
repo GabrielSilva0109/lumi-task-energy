@@ -2,7 +2,7 @@
 RENDER=true
 NODE_ENV=production
 
-# Build Command - Otimizado para Render
+# Build Command - Otimizado para Render (sem testes)
 npm install && npx prisma generate && npm run build
 
 # Start Command  
