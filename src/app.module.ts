@@ -1,4 +1,3 @@
-import { AuthModule } from './modules/auth/auth.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MulterModule } from '@nestjs/platform-express';
@@ -45,7 +44,6 @@ import { AppService } from './app.service';
     LlmModule,
     BillsModule,
     DashboardModule,
-    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
