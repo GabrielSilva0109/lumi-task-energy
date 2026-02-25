@@ -2,11 +2,11 @@
 RENDER=true
 NODE_ENV=production
 
-# Build Command
-npm ci && npm run build
+# Build Command - Otimizado para Render
+npm install && npx prisma generate && npm run build
 
 # Start Command  
-npm run start:prod
+npm run deploy
 
 # Node Version
 NODE_VERSION=18.18.0
