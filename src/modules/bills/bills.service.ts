@@ -256,10 +256,27 @@ export class BillsService {
         originalFileName: bill.originalFileName,
         processingStatus: bill.processingStatus as ProcessingStatus,
         createdAt: bill.createdAt,
+        
+        // Campos extraídos do PDF
+        electricEnergy: {
+          quantity: bill.electricEnergyQuantity,
+          value: bill.electricEnergyValue
+        },
+        sceeeEnergy: bill.sceeeQuantity && bill.sceeeValue ? {
+          quantity: bill.sceeeQuantity,
+          value: bill.sceeeValue
+        } : null,
+        compensatedEnergyGDI: bill.compensatedEnergyQuantity && bill.compensatedEnergyValue ? {
+          quantity: bill.compensatedEnergyQuantity,
+          value: bill.compensatedEnergyValue
+        } : null,
+        publicLightingContrib: bill.publicLightingContrib,
+        
+        // Campos calculados
         totalEnergyConsumption: bill.totalEnergyConsumption,
-        compensatedEnergy: bill.compensatedEnergy,
+        compensatedEnergy: bill.compensatedEnergy || 0,
         totalValueWithoutGD: bill.totalValueWithoutGD,
-        gdEconomy: bill.gdEconomy,
+        gdEconomy: bill.gdEconomy || 0,
       }));
 
       return {
@@ -293,10 +310,27 @@ export class BillsService {
         originalFileName: bill.originalFileName,
         processingStatus: bill.processingStatus as ProcessingStatus,
         createdAt: bill.createdAt,
+        
+        // Campos extraídos do PDF
+        electricEnergy: {
+          quantity: bill.electricEnergyQuantity,
+          value: bill.electricEnergyValue
+        },
+        sceeeEnergy: bill.sceeeQuantity && bill.sceeeValue ? {
+          quantity: bill.sceeeQuantity,
+          value: bill.sceeeValue
+        } : null,
+        compensatedEnergyGDI: bill.compensatedEnergyQuantity && bill.compensatedEnergyValue ? {
+          quantity: bill.compensatedEnergyQuantity,
+          value: bill.compensatedEnergyValue
+        } : null,
+        publicLightingContrib: bill.publicLightingContrib,
+        
+        // Campos calculados
         totalEnergyConsumption: bill.totalEnergyConsumption,
-        compensatedEnergy: bill.compensatedEnergy,
+        compensatedEnergy: bill.compensatedEnergy || 0,
         totalValueWithoutGD: bill.totalValueWithoutGD,
-        gdEconomy: bill.gdEconomy,
+        gdEconomy: bill.gdEconomy || 0,
       };
 
     } catch (error) {
@@ -340,22 +374,28 @@ export class BillsService {
   }
 
   private calculateDerivedValues(extractedData: LlmExtractionResponseDto) {
-    // Consumo de Energia Elétrica (kWh) = Energia Elétrica + Energia SCEEE s/ICMS
+    // 1. Consumo de Energia Elétrica (kWh) = Energia Elétrica + Energia SCEEE s/ICMS
     const totalEnergyConsumption = 
       extractedData.electricEnergy.quantity + 
       (extractedData.sceeeEnergy?.quantity || 0);
 
-    // Energia Compensada (kWh) = Energia Compensada GD I
+    // 2. Energia Compensada (kWh) = Energia Compensada GD I (quantidade)
     const compensatedEnergy = extractedData.compensatedEnergy?.quantity || 0;
 
-    // Valor Total sem GD (R$) = Energia Elétrica + Energia SCEEE + Contrib Ilum Publica
+    // 3. Valor Total sem GD (R$) = Energia Elétrica + Energia SCEEE + Contrib Ilum Publica
     const totalValueWithoutGD = 
       extractedData.electricEnergy.value + 
       (extractedData.sceeeEnergy?.value || 0) + 
       (extractedData.publicLightingContrib || 0);
 
-    // Economia GD (R$) = Energia compensada GD I (valor)
+    // 4. Economia GD (R$) = Energia compensada GD I (valor)
+    // Nota: Se o valor for negativo, significa crédito/desconto aplicado
     const gdEconomy = extractedData.compensatedEnergy?.value || 0;
+
+    this.logger.log(`[CÁLCULOS] Energia Total: ${totalEnergyConsumption} kWh, ` +
+                   `Compensada: ${compensatedEnergy} kWh, ` +
+                   `Valor sem GD: R$ ${totalValueWithoutGD}, ` + 
+                   `Economia GD: R$ ${gdEconomy}`);
 
     return {
       totalEnergyConsumption,

@@ -154,10 +154,38 @@ export class BillsController {
               originalFileName: { type: 'string', example: 'fatura_setembro.pdf' },
               processingStatus: { type: 'string', example: 'COMPLETED' },
               createdAt: { type: 'string', example: '2024-12-19T10:30:00.000Z' },
-              totalEnergyConsumption: { type: 'number', example: 526 },
-              compensatedEnergy: { type: 'number', example: 526 },
-              totalValueWithoutGD: { type: 'number', example: 461.62 },
-              gdEconomy: { type: 'number', example: 438.17 }
+              
+              // Dados extraídos do PDF
+              electricEnergy: {
+                type: 'object',
+                properties: {
+                  quantity: { type: 'number', example: 50, description: 'kWh' },
+                  value: { type: 'number', example: 45.67, description: 'R$' }
+                }
+              },
+              sceeeEnergy: {
+                type: 'object',
+                nullable: true,
+                properties: {
+                  quantity: { type: 'number', example: 476, description: 'kWh' },
+                  value: { type: 'number', example: 392.50, description: 'R$' }
+                }
+              },
+              compensatedEnergyGDI: {
+                type: 'object',
+                nullable: true,
+                properties: {
+                  quantity: { type: 'number', example: 526, description: 'kWh' },
+                  value: { type: 'number', example: 438.17, description: 'R$' }
+                }
+              },
+              publicLightingContrib: { type: 'number', nullable: true, example: 23.45, description: 'R$' },
+              
+              // Valores calculados
+              totalEnergyConsumption: { type: 'number', example: 526, description: 'Consumo total kWh' },
+              compensatedEnergy: { type: 'number', example: 526, description: 'Energia compensada kWh' },
+              totalValueWithoutGD: { type: 'number', example: 461.62, description: 'Valor total sem GD R$' },
+              gdEconomy: { type: 'number', example: 438.17, description: 'Economia GD R$' }
             }
           }
         },

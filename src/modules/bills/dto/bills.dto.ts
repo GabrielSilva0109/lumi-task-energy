@@ -15,10 +15,29 @@ export class UploadBillResponseDto {
   processingStatus: ProcessingStatus;
   createdAt: Date;
   
-  totalEnergyConsumption?: number;
-  compensatedEnergy?: number;
-  totalValueWithoutGD?: number;
-  gdEconomy?: number;
+  // Campos extraídos do PDF (conforme especificação do teste)
+  electricEnergy: {
+    quantity: number; // kWh
+    value: number;    // R$
+  };
+  
+  sceeeEnergy?: {
+    quantity: number; // kWh
+    value: number;    // R$
+  } | null;
+  
+  compensatedEnergyGDI?: {
+    quantity: number; // kWh  
+    value: number;    // R$
+  } | null;
+  
+  publicLightingContrib?: number; // R$
+  
+  // Campos calculados (conforme especificação do teste)
+  totalEnergyConsumption: number;  // Consumo de Energia Elétrica (kWh)
+  compensatedEnergy: number;       // Energia Compensada (kWh)
+  totalValueWithoutGD: number;     // Valor Total sem GD (R$)
+  gdEconomy: number;               // Economia GD (R$)
 }
 
 export class BillFilterDto {
