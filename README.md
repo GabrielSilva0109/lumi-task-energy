@@ -329,31 +329,12 @@ O sistema utiliza logging estruturado com níveis:
 - Retry automático para falhas temporárias
 - Timeouts apropriados para requisições externas
 
-## Contribuição
-
-### Padrões de Código
-
-- Seguir convenções do ESLint e Prettier configurados
-- Utilizar TypeScript strict mode
-- Documentar métodos e classes complexas
-- Escrever testes para novas funcionalidades
-
 ### Processo de Desenvolvimento
 
 1. Criar branch a partir de `main`
 2. Implementar funcionalidade com testes
 3. Executar suite completa de testes
 4. Submeter pull request com descrição detalhada
-
-## Licença
-
-Este projeto é licenciado sob a Licença MIT. Consulte o arquivo LICENSE para mais detalhes.
-
-## Contato e Suporte
-
-- **Equipe de Desenvolvimento**: dev@lumi.com.br
-- **Documentação Técnica**: https://docs.lumi.com.br
-- **Issues e Bugs**: https://github.com/lumi/energy-bills-api/issues
 
 ## Changelog
 
