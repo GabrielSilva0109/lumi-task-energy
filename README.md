@@ -7,6 +7,7 @@ API RESTful desenvolvida para processamento automatizado de faturas de energia e
 ## Funcionalidades Principais
 
 ### Processamento de Faturas
+
 - Upload e processamento de faturas em formato PDF
 - Extração automática de dados via Large Language Model (GPT-4o)
 - Validação e estruturação de informações extraídas
@@ -15,12 +16,14 @@ API RESTful desenvolvida para processamento automatizado de faturas de energia e
 - Sistema de reprocessamento para faturas com falhas
 
 ### Sistema de Consultas
+
 - Listagem paginada de faturas processadas
 - Filtros por número do cliente, período e status de processamento
 - Consulta individual de faturas por ID
 - Busca por intervalos de datas específicos
 
 ### Dashboard Analítico
+
 - Dados consolidados para painéis de controle
 - Análise de consumo vs compensação energética
 - Métricas financeiras de economia com geração distribuída
@@ -31,16 +34,19 @@ API RESTful desenvolvida para processamento automatizado de faturas de energia e
 ## Dados Extraídos das Faturas
 
 ### Informações Básicas
+
 - Número do Cliente
 - Mês de Referência (formato MMM/AAAA)
 
 ### Dados Energéticos
+
 - **Energia Elétrica**: Quantidade (kWh) e Valor (R$)
 - **Energia SCEEE s/ICMS**: Quantidade (kWh) e Valor (R$)
 - **Energia Compensada GD I**: Quantidade (kWh) e Valor (R$)
 - **Contribuição de Iluminação Pública Municipal**: Valor (R$)
 
 ### Métricas Calculadas
+
 - **Consumo Total de Energia**: Somatório Energia Elétrica + Energia SCEEE
 - **Energia Compensada**: Energia Compensada GD I (quantidade)
 - **Valor Total sem GD**: Energia Elétrica + SCEEE + Contrib. Ilum. Pública
@@ -49,20 +55,24 @@ API RESTful desenvolvida para processamento automatizado de faturas de energia e
 ## Stack Tecnológica
 
 ### Backend
+
 - **Node.js** - Runtime JavaScript server-side
 - **NestJS** - Framework Node.js para aplicações escaláveis
 - **TypeScript** - Superset tipado do JavaScript
 - **Prisma ORM** - Mapeamento objeto-relacional moderno
 
 ### Banco de Dados
+
 - **PostgreSQL** - Sistema de gerenciamento de banco de dados relacional
 - **Prisma Client** - Cliente de banco de dados type-safe
 
 ### Inteligência Artificial
+
 - **OpenAI GPT-4o** - Modelo de linguagem para análise de documentos
 - **PDF Parse** - Biblioteca para extração de texto de arquivos PDF
 
 ### Ferramentas de Desenvolvimento
+
 - **Jest** - Framework de testes unitários
 - **Swagger/OpenAPI** - Documentação interativa da API
 - **Class Validator** - Validação de dados baseada em decorators
@@ -99,6 +109,7 @@ src/
 ## Principais Endpoints
 
 ### Faturas (/bills)
+
 - `POST /bills/upload` - Upload e processamento individual
 - `POST /bills/upload/batch` - Upload e processamento em lote
 - `GET /bills` - Listagem com filtros e paginação
@@ -107,6 +118,7 @@ src/
 - `DELETE /bills/:id` - Remoção de fatura
 
 ### Dashboard (/dashboard)
+
 - `GET /dashboard` - Dados gerais consolidados
 - `GET /dashboard/energy` - Resultados energéticos
 - `GET /dashboard/financial` - Resultados financeiros
@@ -115,11 +127,13 @@ src/
 ## Configuração do Ambiente
 
 ### Pré-requisitos
+
 - Node.js (versão 18 ou superior)
 - PostgreSQL (versão 12 ou superior)
 - Conta OpenAI com acesso à API
 
 ### Variáveis de Ambiente
+
 ```env
 # Banco de Dados
 DATABASE_URL="postgresql://usuario:senha@localhost:5432/lumi_energy"
@@ -161,6 +175,7 @@ npm run start:prod
 ## Utilização da API
 
 ### Upload Individual de Fatura
+
 ```bash
 curl -X POST http://localhost:3000/bills/upload \
   -F "file=@fatura.pdf" \
@@ -168,6 +183,7 @@ curl -X POST http://localhost:3000/bills/upload \
 ```
 
 ### Upload em Lote
+
 ```bash
 curl -X POST http://localhost:3000/bills/upload/batch \
   -F "files=@fatura1.pdf" \
@@ -176,6 +192,7 @@ curl -X POST http://localhost:3000/bills/upload/batch \
 ```
 
 ### Listagem com Filtros
+
 ```bash
 # Por cliente específico
 GET /bills?customerNumber=7204076116&page=1&limit=10
@@ -188,6 +205,7 @@ GET /bills?status=COMPLETED
 ```
 
 ### Dados Anuais do Dashboard
+
 ```bash
 # Ano específico
 GET /dashboard/annual?year=2024
@@ -199,6 +217,7 @@ GET /dashboard/annual?year=2024&customerNumber=7204076116
 ## Estrutura de Resposta da API
 
 ### Fatura Individual
+
 ```json
 {
   "id": "cm123abc...",
@@ -225,6 +244,7 @@ GET /dashboard/annual?year=2024&customerNumber=7204076116
 ```
 
 ### Dashboard Anual
+
 ```json
 {
   "yearData": {
@@ -252,16 +272,19 @@ GET /dashboard/annual?year=2024&customerNumber=7204076116
 ## Testes
 
 ### Executar Testes Unitários
+
 ```bash
 npm run test
 ```
 
 ### Executar Testes com Coverage
+
 ```bash
 npm run test:cov
 ```
 
 ### Executar Testes End-to-End
+
 ```bash
 npm run test:e2e
 ```
@@ -269,18 +292,22 @@ npm run test:e2e
 ## Documentação Interativa
 
 A documentação completa da API está disponível via Swagger:
+
 - **Desenvolvimento**: http://localhost:3000/api-docs
 - **Produção**: https://api.lumi.com.br/api-docs
 
 ## Monitoramento e Logs
 
 ### Logs Estruturados
+
 O sistema utiliza logging estruturado com níveis:
+
 - **INFO**: Operações normais e marcos importantes
 - **WARN**: Situações que requerem atenção
 - **ERROR**: Falhas e exceções com stack trace completo
 
 ### Métricas de Performance
+
 - Tempo de processamento por fatura
 - Taxa de sucesso/falha das extrações LLM
 - Uso de tokens da API OpenAI
@@ -289,12 +316,14 @@ O sistema utiliza logging estruturado com níveis:
 ## Considerações de Segurança
 
 ### Validação de Entrada
+
 - Validação rigorosa de tipos de arquivo (apenas PDF)
 - Sanitização de parâmetros de consulta
 - Limitação de tamanho de arquivos
 - Rate limiting para prevenir abuso
 
 ### Tratamento de Erros
+
 - Logs detalhados sem exposição de dados sensíveis
 - Respostas padronizadas de erro
 - Retry automático para falhas temporárias
@@ -303,12 +332,14 @@ O sistema utiliza logging estruturado com níveis:
 ## Contribuição
 
 ### Padrões de Código
+
 - Seguir convenções do ESLint e Prettier configurados
 - Utilizar TypeScript strict mode
 - Documentar métodos e classes complexas
 - Escrever testes para novas funcionalidades
 
 ### Processo de Desenvolvimento
+
 1. Criar branch a partir de `main`
 2. Implementar funcionalidade com testes
 3. Executar suite completa de testes
@@ -327,6 +358,7 @@ Este projeto é licenciado sob a Licença MIT. Consulte o arquivo LICENSE para m
 ## Changelog
 
 ### v1.0.0 (Atual)
+
 - Implementação inicial da API
 - Processamento de faturas via GPT-4o
 - Dashboard com métricas consolidadas

@@ -1,0 +1,12 @@
+# Render Deploy Configuration
+RENDER=true
+NODE_ENV=production
+
+# Build Command
+npm ci && npm run build
+
+# Start Command  
+npm run start:prod
+
+# Node Version
+NODE_VERSION=18.18.0
