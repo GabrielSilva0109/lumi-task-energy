@@ -22,6 +22,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
+import { Express } from 'express';
 import { BillsService } from './bills.service';
 import {
   BillFilterDto,

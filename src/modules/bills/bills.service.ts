@@ -10,6 +10,7 @@ import {
 } from './dto/bills.dto';
 import { LlmExtractionResponseDto } from '../llm/dto/llm-extraction.dto';
 import { createHash } from 'node:crypto';
+import { Express } from 'express';
 
 @Injectable()
 export class BillsService {
